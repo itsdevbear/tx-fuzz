@@ -41,17 +41,10 @@ func NewDefaultConfig(rpcAddr string, N uint64, accessList bool, rng *rand.Rand)
 		return nil, err
 	}
 
-	// Setup Keys
-	var keys []*ecdsa.PrivateKey
-	for i := 0; i < len(staticKeys); i++ {
-		keys = append(keys, crypto.ToECDSAUnsafe(common.FromHex(staticKeys[i])))
-	}
-
 	return &Config{
 		backend:    backend,
 		N:          N,
 		faucet:     crypto.ToECDSAUnsafe(common.FromHex(txfuzz.SK)),
-		keys:       keys,
 		corpus:     [][]byte{},
 		accessList: accessList,
 		gasLimit:   30_000_000,
@@ -80,12 +73,12 @@ func NewConfigFromContext(c *cli.Context) (*Config, error) {
 	// Setup Keys
 	var keys []*ecdsa.PrivateKey
 	nKeys := c.Int(flags.CountFlag.Name)
-	if nKeys == 0 || nKeys > len(staticKeys) {
-		fmt.Printf("Sanitizing count flag from %v to %v\n", nKeys, len(staticKeys))
-		nKeys = len(staticKeys)
-	}
 	for i := 0; i < nKeys; i++ {
-		keys = append(keys, crypto.ToECDSAUnsafe(common.FromHex(staticKeys[i])))
+		privateKey, err := crypto.GenerateKey()
+		if err != nil {
+			return nil, err
+		}
+		keys = append(keys, privateKey)
 	}
 
 	// Setup gasLimit

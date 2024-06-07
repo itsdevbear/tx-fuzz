@@ -3,7 +3,6 @@ package txfuzz
 import (
 	"context"
 	"crypto/sha256"
-	"math"
 	"math/big"
 	"math/rand"
 
@@ -77,7 +76,7 @@ func initDefaultTxConf(rpc *rpc.Client, f *filler.Filler, sender common.Address,
 		gas, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
 			From:      sender,
 			To:        &to,
-			Gas:       math.MaxUint64,
+			Gas:       1000000,
 			GasPrice:  gasPrice,
 			GasFeeCap: gasPrice,
 			GasTipCap: gasPrice,
