@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"math/big"
-	"time"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -155,14 +154,16 @@ func Airdrop(config *Config, value *big.Int) error {
 		fmt.Printf("error getting chain ID; could not airdrop: %v\n", err)
 		return err
 	}
+
+	nonce, err := backend.PendingNonceAt(context.Background(), sender)
+	if err != nil {
+		fmt.Printf("error getting pending nonce; could not airdrop: %v\n", err)
+		return err
+	}
 	for _, addr := range config.keys {
-		nonce, err := backend.PendingNonceAt(context.Background(), sender)
-		if err != nil {
-			fmt.Printf("error getting pending nonce; could not airdrop: %v\n", err)
-			return err
-		}
 		to := crypto.PubkeyToAddress(addr.PublicKey)
 		gp, _ := backend.SuggestGasPrice(context.Background())
+		gp = gp.Mul(gp, big.NewInt(100))
 		gas, err := backend.EstimateGas(context.Background(), ethereum.CallMsg{
 			From:     crypto.PubkeyToAddress(config.faucet.PublicKey),
 			To:       &to,
@@ -182,7 +183,7 @@ func Airdrop(config *Config, value *big.Int) error {
 			return err
 		}
 		tx = signedTx
-		time.Sleep(10 * time.Millisecond)
+		nonce += 1
 	}
 	// Wait for the last transaction to be mined
 	if _, err := bind.WaitMined(context.Background(), backend, tx); err != nil {
